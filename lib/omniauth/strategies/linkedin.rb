@@ -1,8 +1,9 @@
-require 'omniauth-oauth2'
+require "omniauth-oauth2"
 
 module OmniAuth
   module Strategies
     class LinkedIn < OmniAuth::Strategies::OAuth2
+      # https://github.com/decioferreira/omniauth-linkedin-oauth2/blob/master/lib/omniauth/strategies/linkedin.rb
       option :name, 'linkedin'
 
       option :client_options, {
@@ -12,7 +13,7 @@ module OmniAuth
       }
 
       option :scope, 'r_liteprofile r_emailaddress'
-      option :fields, ['id', 'first-name', 'last-name', 'picture-url', 'email-address']
+      option :fields, ['id', 'first-name', 'last-name', 'picture-url', 'email-address', 'vanityName', 'headline']
 
       uid do
         raw_info['id']
@@ -23,7 +24,9 @@ module OmniAuth
           :email => email_address,
           :first_name => localized_field('firstName'),
           :last_name => localized_field('lastName'),
-          :picture_url => picture_url
+          :picture_url => picture_url,
+          :vanity_name => raw_info['vanityName'],
+          :headline => localized_field('headline')
         }
       end
 
@@ -81,7 +84,9 @@ module OmniAuth
           'id' => 'id',
           'first-name' => 'firstName',
           'last-name' => 'lastName',
-          'picture-url' => 'profilePicture(displayImage~:playableStreams)'
+          'picture-url' => 'profilePicture(displayImage~:playableStreams)',
+          'vanityName' => 'vanityName',
+          'headline' => 'headline'
         }
       end
 
@@ -109,7 +114,10 @@ module OmniAuth
       def picture_url
         return unless picture_available?
 
-        picture_references.last['identifiers'].first['identifier']
+        url = picture_references.last['identifiers'].first['identifier']
+        raw_info.delete('profilePicture')
+        raw_info['pictureUrl'] = url
+        url
       end
 
       def picture_available?
@@ -133,4 +141,4 @@ module OmniAuth
   end
 end
 
-OmniAuth.config.add_camelization 'linkedin', 'LinkedIn'
+OmniAuth.config.add_camelization "linkedin", "LinkedIn"
